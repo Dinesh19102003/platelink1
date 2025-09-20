@@ -1,0 +1,1859 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>PlateLink – One Plate. One Act. One Change</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://maps.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com;">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Google Maps API -->
+  <script async defer></script>
+  <!-- Material Icons -->
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    :root {
+      --primary: #10B981;
+      --primary-dark: #059669;
+      --secondary: #3B82F6;
+      --dark: #1F2937;
+      --darker: #111827;
+      --light: #F9FAFB;
+    }
+    
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--darker);
+      color: var(--light);
+    }
+    
+    .card {
+      background: rgba(31, 41, 55, 0.7);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3);
+    }
+    
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+    
+    .form-input {
+      background: rgba(31, 41, 55, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      color: white;
+      padding: 12px 16px;
+      transition: all 0.3s ease;
+    }
+    
+    .form-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+    }
+    
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    
+    .status-active { background: rgba(34, 197, 94, 0.2); color: #22C55E; }
+    .status-matched { background: rgba(59, 130, 246, 0.2); color: #3B82F6; }
+    .status-in-progress { background: rgba(234, 179, 8, 0.2); color: #EAB308; }
+    .status-completed { background: rgba(16, 185, 129, 0.2); color: #10B981; }
+    .status-expired { background: rgba(239, 68, 68, 0.2); color: #EF4444; }
+    
+    .metric-card {
+      transition: all 0.3s ease;
+    }
+    
+    .metric-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+    }
+    
+    .nav-item {
+      padding: 10px 16px;
+      border-radius: 12px;
+      font-weight: 500;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    
+    .nav-item.active {
+      background: rgba(16, 185, 129, 0.2);
+      color: var(--primary);
+    }
+    
+    .nav-item:hover:not(.active) {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .pulse-dot {
+      position: relative;
+    }
+    
+    .pulse-dot::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      border-radius: 50%;
+      background: currentColor;
+      animation: pulse-ring 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    @keyframes pulse-ring {
+      0% {
+        transform: scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+    
+    .map-container {
+      border-radius: 16px;
+      overflow: hidden;
+    }
+    
+    .loading-skeleton {
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+      background-size: 200% 100%;
+      animation: loading 1.5s infinite;
+    }
+    
+    @keyframes loading {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--dark);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 16px;
+      z-index: 1000;
+      transform: translateX(400px);
+      transition: transform 0.3s ease;
+    }
+    
+    .toast.show {
+      transform: translateX(0);
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-darker text-light">
+  <div id="app" class="max-w-7xl mx-auto px-4 py-6 md:py-8">
+    <!-- Toast Notifications -->
+    <div id="toastContainer"></div>
+    
+    <!-- Header -->
+    <header class="flex items-center justify-between mb-8">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-2xl flex items-center justify-center card">
+          <span class="material-icons text-primary">restaurant</span>
+        </div>
+        <div>
+          <h1 class="text-gray-400">PlateLink</h1>
+          <p class="text-gray-400 text-sm">One Plate. One Act. One Change</p>
+        </div>
+        <div id="connectionStatus" class="ml-4 flex items-center gap-2">
+          <div class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></div>
+          <span class="text-xs text-gray-400">Connected</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <button id="btnNotifications" class="btn-secondary p-3 relative">
+          <span class="material-icons">notifications</span>
+          <span id="notificationBadge" class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full px-1 min-w-5 h-5 flex items-center justify-center">0</span>
+        </button>
+        <div id="userProfile" class="hidden items-center gap-2 card px-4 py-2 text-sm">
+          <span class="material-icons text-primary">person</span>
+          <span id="userName"></span>
+          <button id="btnLogout" class="ml-2 text-gray-400 hover:text-white">
+            <span class="material-icons text-sm">logout</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <main id="mainContent">
+      <!-- Authentication View -->
+      <section id="authView" class="card p-8">
+        <div class="max-w-md mx-auto">
+          <h2 class="text-2xl font-bold mb-6 text-center">Welcome to PlateLink</h2>
+          
+          <div id="authTabs" class="flex mb-6 card p-1">
+            <button class="authTab flex-1 py-2 px-4 rounded-lg text-sm font-medium bg-primary/20 text-primary" data-tab="signin">Sign In</button>
+            <button class="authTab flex-1 py-2 px-4 rounded-lg text-sm font-medium hover:bg-white/10" data-tab="signup">Sign Up</button>
+          </div>
+          
+          <form id="authForm" class="space-y-4">
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Email</label>
+              <input id="authEmail" type="email" class="form-input w-full" required>
+            </div>
+            <div>
+              <label class="block text-sm text-gray-400 mb-2">Password</label>
+              <input id="authPassword" type="password" class="form-input w-full" required>
+            </div>
+            <div id="signupFields" class="hidden space-y-4">
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Full Name</label>
+                <input id="authName" type="text" class="form-input w-full">
+              </div>
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Phone</label>
+                <input id="authPhone" type="tel" class="form-input w-full">
+              </div>
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Role</label>
+                <select id="authRole" class="form-input w-full">
+                  <option value="restaurant">Restaurant</option>
+                  <option value="ngo">NGO/Shelter</option>
+                  <option value="volunteer">Volunteer</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" id="authSubmit" class="btn-primary w-full py-3 font-semibold">
+              Sign In
+            </button>
+          </form>
+          
+          <div class="mt-6 text-center">
+            <button id="btnGuestMode" class="btn-secondary px-4 py-2 text-sm">
+              Continue as Guest (Demo Mode)
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Main Dashboard -->
+      <div id="dashboardView" class="hidden">
+        <!-- Role Navigation -->
+        <nav class="card p-4 mb-6">
+          <div class="flex items-center justify-between">
+            <div class="flex gap-2">
+              <button class="nav-item active" data-role="restaurant">
+                <span class="material-icons mr-2">restaurant</span>
+                Restaurant
+              </button>
+              <button class="nav-item" data-role="ngo">
+                <span class="material-icons mr-2">house</span>
+                NGO
+              </button>
+              <button class="nav-item" data-role="volunteer">
+                <span class="material-icons mr-2">directions_bike</span>
+                Volunteer
+              </button>
+            </div>
+            <div class="text-sm text-gray-400">
+              Real-time updates enabled
+            </div>
+          </div>
+        </nav>
+
+        <!-- Restaurant Dashboard -->
+        <section id="restaurantDashboard" class="space-y-6">
+          <!-- Quick Stats -->
+          <div class="grid md:grid-cols-4 gap-4">
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-primary">fastfood</span>
+                <div>
+                  <div class="text-2xl font-bold" id="restaurantMeals">0</div>
+                  <div class="text-sm text-gray-400">Meals Donated</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-green-400">eco</span>
+                <div>
+                  <div class="text-2xl font-bold" id="restaurantCO2">0</div>
+                  <div class="text-sm text-gray-400">kg CO₂ Saved</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-yellow-400">schedule</span>
+                <div>
+                  <div class="text-2xl font-bold" id="restaurantActive">0</div>
+                  <div class="text-sm text-gray-400">Active Donations</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-blue-400">trending_up</span>
+                <div>
+                  <div class="text-2xl font-bold" id="restaurantRating">4.8</div>
+                  <div class="text-sm text-gray-400">Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- New Donation Form -->
+          <div class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold">Report Food Surplus</h3>
+              <button id="btnQuickDonation" class="btn-secondary px-4 py-2 text-sm">Quick Add</button>
+            </div>
+            
+            <form id="donationForm" class="grid md:grid-cols-3 gap-4">
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Food Type</label>
+                <input id="foodType" class="form-input w-full" placeholder="e.g., Vegetarian meals" required>
+              </div>
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Quantity (meals)</label>
+                <input id="quantity" type="number" min="1" max="1000" class="form-input w-full" required>
+              </div>
+              <div>
+                <label class="block text-sm text-gray-400 mb-2">Expiry (hours)</label>
+                <select id="expiry" class="form-input w-full" required>
+                  <option value="2">2 hours</option>
+                  <option value="4" selected>4 hours</option>
+                  <option value="6">6 hours</option>
+                  <option value="8">8 hours</option>
+                  <option value="12">12 hours</option>
+                </select>
+              </div>
+              <div class="md:col-span-3">
+                <label class="block text-sm text-gray-400 mb-2">Additional Notes</label>
+                <textarea id="notes" class="form-input w-full h-20" placeholder="Any special instructions or details..."></textarea>
+              </div>
+              <div class="md:col-span-3 flex items-center justify-between">
+                <div class="text-sm text-gray-400">
+                  <span class="material-icons text-sm mr-1">location_on</span>
+                  Current location will be used for pickup
+                </div>
+                <button type="submit" class="btn-primary px-6 py-2 font-semibold">
+                  Submit Donation
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Active Donations -->
+          <div class="card p-6">
+            <h3 class="text-xl font-semibold mb-4">Active Donations</h3>
+            <div id="activeDonations" class="space-y-4">
+              <div class="text-center text-gray-400 py-8">
+                No active donations. Create your first donation above!
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- NGO Dashboard -->
+        <section id="ngoDashboard" class="hidden space-y-6">
+          <!-- NGO Stats -->
+          <div class="grid md:grid-cols-4 gap-4">
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-primary">home</span>
+                <div>
+                  <div class="text-2xl font-bold" id="ngoCapacity">150</div>
+                  <div class="text-sm text-gray-400">Capacity (meals)</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-green-400">restaurant</span>
+                <div>
+                  <div class="text-2xl font-bold" id="ngoReceived">0</div>
+                  <div class="text-sm text-gray-400">Meals Received</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-blue-400">local_shipping</span>
+                <div>
+                  <div class="text-2xl font-bold" id="ngoInTransit">0</div>
+                  <div class="text-sm text-gray-400">In Transit</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-yellow-400">pending</span>
+                <div>
+                  <div class="text-2xl font-bold" id="ngoPending">0</div>
+                  <div class="text-sm text-gray-400">Pending Requests</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Available Donations -->
+          <div class="card p-6">
+            <h3 class="text-xl font-semibold mb-4">Available Donations</h3>
+            <div id="availableDonations" class="space-y-4">
+              <div class="text-center text-gray-400 py-8">
+                <div class="loading-skeleton h-4 w-48 mx-auto mb-2 rounded"></div>
+                <div class="loading-skeleton h-4 w-32 mx-auto rounded"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Accepted Donations -->
+          <div class="card p-6">
+            <h3 class="text-xl font-semibold mb-4">Your Accepted Donations</h3>
+            <div id="acceptedDonations" class="space-y-4">
+              <div class="text-center text-gray-400 py-8">
+                No accepted donations yet.
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Volunteer Dashboard -->
+        <section id="volunteerDashboard" class="hidden space-y-6">
+          <!-- Volunteer Stats -->
+          <div class="grid md:grid-cols-4 gap-4">
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-primary">delivery_dining</span>
+                <div>
+                  <div class="text-2xl font-bold" id="volunteerDeliveries">0</div>
+                  <div class="text-sm text-gray-400">Total Deliveries</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-green-400">fastfood</span>
+                <div>
+                  <div class="text-2xl font-bold" id="volunteerMeals">0</div>
+                  <div class="text-sm text-gray-400">Meals Delivered</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-yellow-400">schedule</span>
+                <div>
+                  <div class="text-2xl font-bold" id="volunteerActive">0</div>
+                  <div class="text-sm text-gray-400">Active Jobs</div>
+                </div>
+              </div>
+            </div>
+            <div class="card p-5 metric-card">
+              <div class="flex items-center gap-3">
+                <span class="material-icons text-blue-400">star</span>
+                <div>
+                  <div class="text-2xl font-bold" id="volunteerRating">4.9</div>
+                  <div class="text-sm text-gray-400">Rating</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Location Status -->
+          <div class="card p-6">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="text-xl font-semibold">Location & Availability</h3>
+              <button id="btnToggleAvailability" class="btn-primary px-4 py-2">
+                Go Online
+              </button>
+            </div>
+            <div class="flex items-center gap-4">
+              <div id="locationStatus" class="flex items-center gap-2">
+                <span class="material-icons text-gray-400">location_off</span>
+                <span class="text-gray-400">Location access required</span>
+              </div>
+              <button id="btnEnableLocation" class="btn-secondary px-4 py-2 text-sm">
+                Enable Location
+              </button>
+            </div>
+          </div>
+
+          <!-- Available Jobs -->
+          <div class="card p-6">
+            <h3 class="text-xl font-semibold mb-4">Available Delivery Jobs</h3>
+            <div id="availableJobs" class="space-y-4">
+              <div class="text-center text-gray-400 py-8">
+                Go online to see available delivery jobs
+              </div>
+            </div>
+          </div>
+
+          <!-- Active Deliveries -->
+          <div class="card p-6">
+            <h3 class="text-xl font-semibold mb-4">Your Active Deliveries</h3>
+            <div id="activeDeliveries" class="space-y-4">
+              <div class="text-center text-gray-400 py-8">
+                No active deliveries
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Live Map Modal -->
+    <div id="mapModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div class="bg-darker rounded-2xl p-6 w-full max-w-4xl max-h-[90vh] overflow-auto">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-semibold">Live Delivery Tracking</h3>
+          <button id="closeMapModal" class="text-gray-400 hover:text-white">
+            <span class="material-icons">close</span>
+          </button>
+        </div>
+        <div id="liveMap" class="w-full h-96 map-container mb-4">
+          <div class="flex items-center justify-center h-full bg-gray-800 text-gray-400">
+            <div class="text-center">
+              <span class="material-icons text-4xl mb-2">map</span>
+              <div>Live map will appear here</div>
+            </div>
+          </div>
+        </div>
+        <div class="grid md:grid-cols-3 gap-4">
+          <div class="card p-4">
+            <div class="text-sm text-gray-400 mb-1">ETA</div>
+            <div id="mapETA" class="text-xl font-bold">--</div>
+          </div>
+          <div class="card p-4">
+            <div class="text-sm text-gray-400 mb-1">Distance</div>
+            <div id="mapDistance" class="text-xl font-bold">--</div>
+          </div>
+          <div class="card p-4">
+            <div class="text-sm text-gray-400 mb-1">Status</div>
+            <div id="mapStatus" class="text-xl font-bold">--</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Configuration
+    const CONFIG = {
+      SUPABASE_URL: 'YOUR_SUPABASE_URL',
+      SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
+      GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY',
+      MAX_RETRIES: 3,
+      RETRY_DELAY: 1000,
+      LOCATION_UPDATE_INTERVAL: 30000, // 30 seconds
+      HEARTBEAT_INTERVAL: 60000, // 1 minute
+    };
+
+    // Initialize Supabase client with retry logic
+    let supabase = null;
+    let retryCount = 0;
+
+    function initializeSupabase() {
+      try {
+        if (CONFIG.SUPABASE_URL.includes('YOUR_SUPABASE')) {
+          console.warn('Using demo mode - Supabase not configured');
+          return null;
+        }
+        
+        supabase = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+          realtime: {
+            params: {
+              eventsPerSecond: 10
+            }
+          }
+        });
+        
+        console.log('Supabase initialized successfully');
+        return supabase;
+      } catch (error) {
+        console.error('Failed to initialize Supabase:', error);
+        showToast('Connection error. Retrying...', 'error');
+        
+        if (retryCount < CONFIG.MAX_RETRIES) {
+          retryCount++;
+          setTimeout(initializeSupabase, CONFIG.RETRY_DELAY * retryCount);
+        }
+        return null;
+      }
+    }
+
+    // Application state
+    const appState = {
+      user: null,
+      currentRole: 'restaurant',
+      isOnline: false,
+      userLocation: null,
+      donations: new Map(),
+      deliveries: new Map(),
+      notifications: [],
+      subscriptions: new Map(),
+      heartbeatInterval: null,
+      locationInterval: null
+    };
+
+    // Real-time subscriptions
+    class RealtimeManager {
+      constructor() {
+        this.subscriptions = new Map();
+        this.reconnectAttempts = 0;
+        this.maxReconnectAttempts = 5;
+      }
+
+      async subscribe(table, callback, filter = null) {
+        if (!supabase) return null;
+
+        try {
+          const channelName = `${table}_${Date.now()}`;
+          let subscription = supabase
+            .channel(channelName)
+            .on('postgres_changes', {
+              event: '*',
+              schema: 'public',
+              table: table,
+              ...(filter && { filter })
+            }, callback)
+            .subscribe();
+
+          this.subscriptions.set(channelName, subscription);
+          console.log(`Subscribed to ${table} changes`);
+          return channelName;
+        } catch (error) {
+          console.error(`Failed to subscribe to ${table}:`, error);
+          this.handleReconnect();
+          return null;
+        }
+      }
+
+      unsubscribe(channelName) {
+        const subscription = this.subscriptions.get(channelName);
+        if (subscription) {
+          supabase.removeChannel(subscription);
+          this.subscriptions.delete(channelName);
+          console.log(`Unsubscribed from ${channelName}`);
+        }
+      }
+
+      async handleReconnect() {
+        if (this.reconnectAttempts < this.maxReconnectAttempts) {
+          this.reconnectAttempts++;
+          const delay = Math.min(1000 * Math.pow(2, this.reconnectAttempts), 30000);
+          
+          showToast(`Connection lost. Reconnecting in ${delay/1000}s...`, 'warning');
+          
+          setTimeout(async () => {
+            try {
+              await this.reconnectAll();
+              this.reconnectAttempts = 0;
+              showToast('Reconnected successfully', 'success');
+            } catch (error) {
+              console.error('Reconnection failed:', error);
+              this.handleReconnect();
+            }
+          }, delay);
+        } else {
+          showToast('Unable to establish connection. Please refresh the page.', 'error');
+        }
+      }
+
+      async reconnectAll() {
+        // Clear existing subscriptions
+        this.subscriptions.forEach((subscription, channelName) => {
+          supabase.removeChannel(subscription);
+        });
+        this.subscriptions.clear();
+
+        // Reinitialize critical subscriptions based on current role
+        await initializeRealtimeSubscriptions();
+      }
+    }
+
+    const realtimeManager = new RealtimeManager();
+
+    // Database operations with error handling and retries
+    class DatabaseManager {
+      async withRetry(operation, maxRetries = 3) {
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            return await operation();
+          } catch (error) {
+            console.error(`Database operation failed (attempt ${attempt}):`, error);
+            if (attempt === maxRetries) {
+              throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+          }
+        }
+      }
+
+      async createDonation(donationData) {
+        if (!supabase) {
+          // Demo mode - store locally
+          const donation = {
+            id: Date.now().toString(),
+            ...donationData,
+            created_at: new Date().toISOString(),
+            status: 'active'
+          };
+          appState.donations.set(donation.id, donation);
+          return donation;
+        }
+
+        return this.withRetry(async () => {
+          const { data, error } = await supabase
+            .from('donations')
+            .insert([{
+              ...donationData,
+              user_id: appState.user.id,
+              status: 'active'
+            }])
+            .select()
+            .single();
+
+          if (error) throw error;
+          return data;
+        });
+      }
+
+      async updateDonation(id, updates) {
+        if (!supabase) {
+          const donation = appState.donations.get(id);
+          if (donation) {
+            Object.assign(donation, updates);
+            appState.donations.set(id, donation);
+            return donation;
+          }
+          throw new Error('Donation not found');
+        }
+
+        return this.withRetry(async () => {
+          const { data, error } = await supabase
+            .from('donations')
+            .update(updates)
+            .eq('id', id)
+            .select()
+            .single();
+
+          if (error) throw error;
+          return data;
+        });
+      }
+
+      async getDonations(filters = {}) {
+        if (!supabase) {
+          return Array.from(appState.donations.values()).filter(donation => {
+            return Object.entries(filters).every(([key, value]) => donation[key] === value);
+          });
+        }
+
+        return this.withRetry(async () => {
+          let query = supabase.from('donations').select('*');
+          
+          Object.entries(filters).forEach(([key, value]) => {
+            query = query.eq(key, value);
+          });
+
+          const { data, error } = await query.order('created_at', { ascending: false });
+          if (error) throw error;
+          return data || [];
+        });
+      }
+
+      async acceptDonation(donationId, ngoId) {
+        return this.updateDonation(donationId, {
+          status: 'matched',
+          ngo_id: ngoId,
+          matched_at: new Date().toISOString()
+        });
+      }
+
+      async assignVolunteer(donationId, volunteerId) {
+        return this.updateDonation(donationId, {
+          status: 'in-progress',
+          volunteer_id: volunteerId,
+          assigned_at: new Date().toISOString()
+        });
+      }
+
+      async completeDonation(donationId) {
+        return this.updateDonation(donationId, {
+          status: 'completed',
+          completed_at: new Date().toISOString()
+        });
+      }
+
+      async updateUserLocation(userId, location) {
+        if (!supabase) return;
+
+        return this.withRetry(async () => {
+          const { error } = await supabase
+            .from('user_locations')
+            .upsert({
+              user_id: userId,
+              latitude: location.lat,
+              longitude: location.lng,
+              updated_at: new Date().toISOString()
+            });
+
+          if (error) throw error;
+        });
+      }
+    }
+
+    const db = new DatabaseManager();
+
+    // Authentication manager
+    class AuthManager {
+      async signIn(email, password) {
+        if (!supabase) {
+          // Demo mode
+          const user = {
+            id: 'demo-' + Date.now(),
+            email: email,
+            user_metadata: { full_name: email.split('@')[0] }
+          };
+          appState.user = user;
+          return { user, error: null };
+        }
+
+        try {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email: email,
+            password: password,
+          });
+          
+          if (data.user) {
+            appState.user = data.user;
+          }
+          
+          return { user: data.user, error };
+        } catch (error) {
+          return { user: null, error };
+        }
+      }
+
+      async signUp(email, password, userData) {
+        if (!supabase) {
+          // Demo mode
+          const user = {
+            id: 'demo-' + Date.now(),
+            email: email,
+            user_metadata: userData
+          };
+          appState.user = user;
+          return { user, error: null };
+        }
+
+        try {
+          const { data, error } = await supabase.auth.signUp({
+            email: email,
+            password: password,
+            options: {
+              data: userData
+            }
+          });
+
+          if (data.user) {
+            appState.user = data.user;
+          }
+
+          return { user: data.user, error };
+        } catch (error) {
+          return { user: null, error };
+        }
+      }
+
+      async signOut() {
+        if (supabase) {
+          await supabase.auth.signOut();
+        }
+        appState.user = null;
+        appState.isOnline = false;
+        clearInterval(appState.heartbeatInterval);
+        clearInterval(appState.locationInterval);
+        showAuthView();
+      }
+
+      async getCurrentUser() {
+        if (!supabase) return appState.user;
+
+        try {
+          const { data: { user } } = await supabase.auth.getUser();
+          appState.user = user;
+          return user;
+        } catch (error) {
+          console.error('Failed to get current user:', error);
+          return null;
+        }
+      }
+    }
+
+    const auth = new AuthManager();
+
+    // Location manager
+    class LocationManager {
+      constructor() {
+        this.watchId = null;
+        this.lastLocation = null;
+      }
+
+      async getCurrentLocation() {
+        return new Promise((resolve, reject) => {
+          if (!navigator.geolocation) {
+            reject(new Error('Geolocation is not supported by this browser.'));
+            return;
+          }
+
+          navigator.geolocation.getCurrentPosition(
+            position => {
+              const location = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                accuracy: position.coords.accuracy
+              };
+              this.lastLocation = location;
+              resolve(location);
+            },
+            error => {
+              console.error('Geolocation error:', error);
+              reject(error);
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 300000 // 5 minutes
+            }
+          );
+        });
+      }
+
+      startTracking() {
+        if (!navigator.geolocation) {
+          showToast('Geolocation is not supported', 'error');
+          return false;
+        }
+
+        this.watchId = navigator.geolocation.watchPosition(
+          position => {
+            const location = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+              accuracy: position.coords.accuracy
+            };
+            
+            this.lastLocation = location;
+            appState.userLocation = location;
+            
+            // Update location in database
+            if (appState.user && appState.isOnline) {
+              db.updateUserLocation(appState.user.id, location);
+            }
+          },
+          error => {
+            console.error('Geolocation tracking error:', error);
+            showToast('Location tracking error', 'warning');
+          },
+          {
+            enableHighAccuracy: true,
+            timeout: 30000,
+            maximumAge: 60000
+          }
+        );
+
+        return true;
+      }
+
+      stopTracking() {
+        if (this.watchId) {
+          navigator.geolocation.clearWatch(this.watchId);
+          this.watchId = null;
+        }
+      }
+    }
+
+    const locationManager = new LocationManager();
+
+    // UI Helper functions
+    function showToast(message, type = 'info', duration = 4000) {
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      
+      const iconMap = {
+        success: 'check_circle',
+        error: 'error',
+        warning: 'warning',
+        info: 'info'
+      };
+
+      toast.innerHTML = `
+        <div class="flex items-center gap-3">
+          <span class="material-icons text-${type === 'error' ? 'red' : type === 'success' ? 'green' : type === 'warning' ? 'yellow' : 'blue'}-400">
+            ${iconMap[type]}
+          </span>
+          <span>${message}</span>
+          <button onclick="this.parentElement.parentElement.remove()" class="ml-auto">
+            <span class="material-icons text-sm">close</span>
+          </button>
+        </div>
+      `;
+
+      document.getElementById('toastContainer').appendChild(toast);
+      
+      // Trigger animation
+      setTimeout(() => toast.classList.add('show'), 100);
+      
+      // Auto remove
+      setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 300);
+      }, duration);
+    }
+
+    function updateConnectionStatus(connected) {
+      const statusEl = document.getElementById('connectionStatus');
+      const dot = statusEl.querySelector('.pulse-dot');
+      const text = statusEl.querySelector('span');
+      
+      if (connected) {
+        dot.className = 'w-2 h-2 rounded-full bg-green-400 pulse-dot';
+        text.textContent = 'Connected';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-red-400';
+        text.textContent = 'Disconnected';
+      }
+    }
+
+    function showAuthView() {
+      document.getElementById('authView').classList.remove('hidden');
+      document.getElementById('dashboardView').classList.add('hidden');
+      document.getElementById('userProfile').classList.add('hidden');
+    }
+
+    function showDashboardView() {
+      document.getElementById('authView').classList.add('hidden');
+      document.getElementById('dashboardView').classList.remove('hidden');
+      document.getElementById('userProfile').classList.remove('hidden');
+      
+      // Update user profile
+      const userName = document.getElementById('userName');
+      if (appState.user) {
+        const name = appState.user.user_metadata?.full_name || appState.user.email.split('@')[0];
+        userName.textContent = `${name} (${appState.currentRole})`;
+      }
+    }
+
+    function switchRole(role) {
+      appState.currentRole = role;
+      
+      // Update nav items
+      document.querySelectorAll('.nav-item').forEach(item => {
+        if (item.dataset.role === role) {
+          item.classList.add('active');
+        } else {
+          item.classList.remove('active');
+        }
+      });
+
+      // Show appropriate dashboard
+      const dashboards = ['restaurantDashboard', 'ngoDashboard', 'volunteerDashboard'];
+      dashboards.forEach(dashboardId => {
+        const dashboard = document.getElementById(dashboardId);
+        if (dashboardId === `${role}Dashboard`) {
+          dashboard.classList.remove('hidden');
+        } else {
+          dashboard.classList.add('hidden');
+        }
+      });
+
+      // Initialize role-specific functionality
+      initializeRoleView(role);
+      
+      // Update user profile
+      const userName = document.getElementById('userName');
+      if (appState.user) {
+        const name = appState.user.user_metadata?.full_name || appState.user.email.split('@')[0];
+        userName.textContent = `${name} (${role})`;
+      }
+    }
+
+    async function initializeRoleView(role) {
+      switch (role) {
+        case 'restaurant':
+          await loadRestaurantData();
+          break;
+        case 'ngo':
+          await loadNgoData();
+          break;
+        case 'volunteer':
+          await loadVolunteerData();
+          break;
+      }
+    }
+
+    // Restaurant functionality
+    async function loadRestaurantData() {
+      try {
+        if (appState.user) {
+          const donations = await db.getDonations({ user_id: appState.user.id });
+          updateRestaurantStats(donations);
+          displayActiveDonations(donations.filter(d => d.status !== 'completed'));
+        }
+      } catch (error) {
+        console.error('Failed to load restaurant data:', error);
+        showToast('Failed to load data', 'error');
+      }
+    }
+
+    function updateRestaurantStats(donations) {
+      const totalMeals = donations.reduce((sum, d) => sum + (d.quantity || 0), 0);
+      const co2Saved = (totalMeals * 0.5).toFixed(1); // 0.5kg CO2 per meal estimate
+      const activeDonations = donations.filter(d => d.status !== 'completed').length;
+
+      document.getElementById('restaurantMeals').textContent = totalMeals;
+      document.getElementById('restaurantCO2').textContent = co2Saved;
+      document.getElementById('restaurantActive').textContent = activeDonations;
+    }
+
+    function displayActiveDonations(donations) {
+      const container = document.getElementById('activeDonations');
+      
+      if (donations.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-gray-400 py-8">
+            No active donations. Create your first donation above!
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = donations.map(donation => `
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold">${donation.food_type} (${donation.quantity} meals)</div>
+              <div class="text-sm text-gray-400">Created ${formatRelativeTime(donation.created_at)}</div>
+            </div>
+            <span class="status-badge status-${donation.status}">${formatStatus(donation.status)}</span>
+          </div>
+          ${donation.notes ? `<div class="text-sm text-gray-300 mb-3">${donation.notes}</div>` : ''}
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-400">
+              Expires in ${calculateExpiryTime(donation.created_at, donation.expiry_hours)}
+            </div>
+            <button class="btn-secondary px-3 py-1 text-sm" onclick="showLiveTracking('${donation.id}')">
+              <span class="material-icons text-sm mr-1">map</span>
+              Track
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // NGO functionality
+    async function loadNgoData() {
+      try {
+        // Load available donations (not yet matched)
+        const availableDonations = await db.getDonations({ status: 'active' });
+        displayAvailableDonations(availableDonations);
+
+        // Load accepted donations
+        if (appState.user) {
+          const acceptedDonations = await db.getDonations({ ngo_id: appState.user.id });
+          displayAcceptedDonations(acceptedDonations);
+          updateNgoStats(acceptedDonations);
+        }
+      } catch (error) {
+        console.error('Failed to load NGO data:', error);
+        showToast('Failed to load data', 'error');
+      }
+    }
+
+    function displayAvailableDonations(donations) {
+      const container = document.getElementById('availableDonations');
+      
+      if (donations.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-gray-400 py-8">
+            No available donations at the moment.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = donations.map(donation => `
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold">${donation.food_type} (${donation.quantity} meals)</div>
+              <div class="text-sm text-gray-400">
+                Available ${formatRelativeTime(donation.created_at)}
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-gray-400 mb-1">Expires in</div>
+              <div class="text-sm font-medium text-yellow-400">
+                ${calculateExpiryTime(donation.created_at, donation.expiry_hours)}
+              </div>
+            </div>
+          </div>
+          ${donation.notes ? `<div class="text-sm text-gray-300 mb-3">${donation.notes}</div>` : ''}
+          <div class="flex items-center gap-3">
+            <button class="btn-primary px-4 py-2 text-sm" onclick="acceptDonation('${donation.id}')">
+              Accept Donation
+            </button>
+            <button class="btn-secondary px-4 py-2 text-sm" onclick="showDonationDetails('${donation.id}')">
+              View Details
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function displayAcceptedDonations(donations) {
+      const container = document.getElementById('acceptedDonations');
+      
+      if (donations.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-gray-400 py-8">
+            No accepted donations yet.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = donations.map(donation => `
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold">${donation.food_type} (${donation.quantity} meals)</div>
+              <div class="text-sm text-gray-400">
+                ${donation.status === 'matched' ? 'Waiting for volunteer' : 
+                  donation.status === 'in-progress' ? 'Being delivered' : 
+                  'Delivered'}
+              </div>
+            </div>
+            <span class="status-badge status-${donation.status}">${formatStatus(donation.status)}</span>
+          </div>
+          <div class="flex items-center justify-between">
+            <div class="text-sm text-gray-400">
+              ${donation.volunteer_id ? `Volunteer assigned` : 'Seeking volunteer'}
+            </div>
+            ${donation.status === 'in-progress' ? `
+              <button class="btn-secondary px-3 py-1 text-sm" onclick="showLiveTracking('${donation.id}')">
+                <span class="material-icons text-sm mr-1">map</span>
+                Track Delivery
+              </button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateNgoStats(donations) {
+      const received = donations.filter(d => d.status === 'completed').reduce((sum, d) => sum + (d.quantity || 0), 0);
+      const inTransit = donations.filter(d => d.status === 'in-progress').length;
+      const pending = donations.filter(d => d.status === 'matched').length;
+
+      document.getElementById('ngoReceived').textContent = received;
+      document.getElementById('ngoInTransit').textContent = inTransit;
+      document.getElementById('ngoPending').textContent = pending;
+    }
+
+    // Volunteer functionality
+    async function loadVolunteerData() {
+      try {
+        // Load available jobs (donations that are matched but not assigned)
+        const availableJobs = await db.getDonations({ status: 'matched' });
+        displayAvailableJobs(availableJobs);
+
+        // Load active deliveries
+        if (appState.user) {
+          const activeDeliveries = await db.getDonations({ 
+            volunteer_id: appState.user.id, 
+            status: 'in-progress' 
+          });
+          displayActiveDeliveries(activeDeliveries);
+          updateVolunteerStats();
+        }
+      } catch (error) {
+        console.error('Failed to load volunteer data:', error);
+        showToast('Failed to load data', 'error');
+      }
+    }
+
+    function displayAvailableJobs(jobs) {
+      const container = document.getElementById('availableJobs');
+      
+      if (!appState.isOnline) {
+        container.innerHTML = `
+          <div class="text-center text-gray-400 py-8">
+            Go online to see available delivery jobs
+          </div>
+        `;
+        return;
+      }
+
+      if (jobs.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-gray-400 py-8">
+            No available delivery jobs at the moment.
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = jobs.map(job => `
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold">${job.food_type} (${job.quantity} meals)</div>
+              <div class="text-sm text-gray-400">
+                Pickup → Delivery • ${calculateEstimatedDistance()} km
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="text-sm text-green-400 font-medium">₹${calculateDeliveryFee(job.quantity)}</div>
+              <div class="text-xs text-gray-400">Delivery fee</div>
+            </div>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="btn-primary px-4 py-2 text-sm" onclick="acceptDeliveryJob('${job.id}')">
+              Accept Job
+            </button>
+            <button class="btn-secondary px-4 py-2 text-sm" onclick="showJobRoute('${job.id}')">
+              View Route
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function displayActiveDeliveries(deliveries) {
+      const container = document.getElementById('activeDeliveries');
+      
+      if (deliveries.length === 0) {
+        container.innerHTML = `
+          <div class="text-center text-gray-400 py-8">
+            No active deliveries
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = deliveries.map(delivery => `
+        <div class="card p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <div class="font-semibold">${delivery.food_type} (${delivery.quantity} meals)</div>
+              <div class="text-sm text-gray-400">In progress</div>
+            </div>
+            <span class="status-badge status-in-progress">Delivering</span>
+          </div>
+          <div class="flex items-center gap-3">
+            <button class="btn-primary px-4 py-2 text-sm" onclick="showLiveTracking('${delivery.id}')">
+              <span class="material-icons text-sm mr-1">map</span>
+              Live Tracking
+            </button>
+            <button class="btn-secondary px-4 py-2 text-sm" onclick="markDelivered('${delivery.id}')">
+              Mark Delivered
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateVolunteerStats() {
+      // In a real implementation, these would come from the database
+      document.getElementById('volunteerDeliveries').textContent = '0';
+      document.getElementById('volunteerMeals').textContent = '0';
+      document.getElementById('volunteerActive').textContent = '0';
+    }
+
+    // Real-time subscription setup
+    async function initializeRealtimeSubscriptions() {
+      if (!supabase) return;
+
+      // Subscribe to donations table
+      realtimeManager.subscribe('donations', (payload) => {
+        console.log('Donation update:', payload);
+        
+        switch (payload.eventType) {
+          case 'INSERT':
+            handleNewDonation(payload.new);
+            break;
+          case 'UPDATE':
+            handleDonationUpdate(payload.new);
+            break;
+          case 'DELETE':
+            handleDonationDelete(payload.old);
+            break;
+        }
+      });
+
+      // Subscribe to user locations if volunteer
+      if (appState.currentRole === 'volunteer') {
+        realtimeManager.subscribe('user_locations', (payload) => {
+          console.log('Location update:', payload);
+          // Handle real-time location updates for delivery tracking
+        });
+      }
+    }
+
+    function handleNewDonation(donation) {
+      // Update local state
+      appState.donations.set(donation.id, donation);
+      
+      // Show notification based on user role
+      if (appState.currentRole === 'ngo') {
+        showToast(`New donation available: ${donation.food_type}`, 'info');
+        loadNgoData(); // Refresh NGO view
+      }
+    }
+
+    function handleDonationUpdate(donation) {
+      appState.donations.set(donation.id, donation);
+      
+      // Update UI based on current role and donation status
+      if (donation.status === 'matched' && appState.currentRole === 'volunteer') {
+        showToast(`New delivery job available`, 'info');
+        loadVolunteerData();
+      }
+      
+      if (donation.status === 'in-progress') {
+        showToast(`Delivery started for ${donation.food_type}`, 'info');
+      }
+      
+      if (donation.status === 'completed') {
+        showToast(`Delivery completed: ${donation.food_type}`, 'success');
+      }
+      
+      // Refresh current view
+      initializeRoleView(appState.currentRole);
+    }
+
+    function handleDonationDelete(donation) {
+      appState.donations.delete(donation.id);
+      initializeRoleView(appState.currentRole);
+    }
+
+    // Utility functions
+    function formatRelativeTime(timestamp) {
+      const now = new Date();
+      const time = new Date(timestamp);
+      const diffInMinutes = Math.floor((now - time) / (1000 * 60));
+      
+      if (diffInMinutes < 1) return 'just now';
+      if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      if (diffInHours < 24) return `${diffInHours}h ago`;
+      
+      const diffInDays = Math.floor(diffInHours / 24);
+      return `${diffInDays}d ago`;
+    }
+
+    function formatStatus(status) {
+      const statusMap = {
+        'active': 'Active',
+        'matched': 'Matched',
+        'in-progress': 'In Progress',
+        'completed': 'Completed',
+        'expired': 'Expired'
+      };
+      return statusMap[status] || status;
+    }
+
+    function calculateExpiryTime(createdAt, expiryHours) {
+      const created = new Date(createdAt);
+      const expiry = new Date(created.getTime() + expiryHours * 60 * 60 * 1000);
+      const now = new Date();
+      
+      if (expiry < now) return 'Expired';
+      
+      const diffInMinutes = Math.floor((expiry - now) / (1000 * 60));
+      if (diffInMinutes < 60) return `${diffInMinutes}m`;
+      
+      const diffInHours = Math.floor(diffInMinutes / 60);
+      return `${diffInHours}h ${diffInMinutes % 60}m`;
+    }
+
+    function calculateEstimatedDistance() {
+      // Simplified distance calculation for demo
+      return (Math.random() * 5 + 1).toFixed(1);
+    }
+
+    function calculateDeliveryFee(quantity) {
+      // Base fee + quantity-based fee
+      return Math.max(50, quantity * 5);
+    }
+
+    // Event handlers
+    async function acceptDonation(donationId) {
+      try {
+        await db.acceptDonation(donationId, appState.user.id);
+        showToast('Donation accepted successfully', 'success');
+        loadNgoData();
+      } catch (error) {
+        console.error('Failed to accept donation:', error);
+        showToast('Failed to accept donation', 'error');
+      }
+    }
+
+    async function acceptDeliveryJob(jobId) {
+      try {
+        await db.assignVolunteer(jobId, appState.user.id);
+        showToast('Delivery job accepted', 'success');
+        loadVolunteerData();
+      } catch (error) {
+        console.error('Failed to accept job:', error);
+        showToast('Failed to accept job', 'error');
+      }
+    }
+
+    async function markDelivered(deliveryId) {
+      try {
+        await db.completeDonation(deliveryId);
+        showToast('Delivery marked as completed', 'success');
+        loadVolunteerData();
+      } catch (error) {
+        console.error('Failed to mark as delivered:', error);
+        showToast('Failed to update delivery status', 'error');
+      }
+    }
+
+    function showLiveTracking(donationId) {
+      // Show the live tracking modal
+      document.getElementById('mapModal').classList.remove('hidden');
+      // In a real implementation, this would initialize the Google Maps integration
+    }
+
+    function showDonationDetails(donationId) {
+      const donation = appState.donations.get(donationId);
+      if (donation) {
+        alert(`Donation Details:\n\nFood: ${donation.food_type}\nQuantity: ${donation.quantity} meals\nNotes: ${donation.notes || 'None'}`);
+      }
+    }
+
+    function showJobRoute(jobId) {
+      showToast('Route planning feature coming soon', 'info');
+    }
+
+    // Initialize the application
+    document.addEventListener('DOMContentLoaded', async () => {
+      // Initialize Supabase
+      supabase = initializeSupabase();
+      
+      // Check for existing session
+      const user = await auth.getCurrentUser();
+      
+      if (user) {
+        appState.user = user;
+        showDashboardView();
+        await initializeRealtimeSubscriptions
+        await initializeRealtimeSubscriptions();
+        await initializeRoleView(appState.currentRole);
+      } else {
+        showAuthView();
+      }
+
+      // Event listeners
+      setupEventListeners();
+    });
+
+    function setupEventListeners() {
+      // Auth tabs
+      document.querySelectorAll('.authTab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          const tabName = tab.dataset.tab;
+          
+          // Update active tab
+          document.querySelectorAll('.authTab').forEach(t => {
+            t.classList.toggle('bg-primary/20', t.dataset.tab === tabName);
+            t.classList.toggle('text-primary', t.dataset.tab === tabName);
+            t.classList.toggle('hover:bg-white/10', t.dataset.tab !== tabName);
+          });
+          
+          // Update form
+          const signupFields = document.getElementById('signupFields');
+          const submitBtn = document.getElementById('authSubmit');
+          
+          if (tabName === 'signup') {
+            signupFields.classList.remove('hidden');
+            submitBtn.textContent = 'Sign Up';
+          } else {
+            signupFields.classList.add('hidden');
+            submitBtn.textContent = 'Sign In';
+          }
+        });
+      });
+
+      // Auth form submission
+      document.getElementById('authForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const email = document.getElementById('authEmail').value;
+        const password = document.getElementById('authPassword').value;
+        const isSignUp = document.getElementById('signupFields').classList.contains('hidden') === false;
+        
+        try {
+          if (isSignUp) {
+            const name = document.getElementById('authName').value;
+            const phone = document.getElementById('authPhone').value;
+            const role = document.getElementById('authRole').value;
+            
+            const { user, error } = await auth.signUp(email, password, {
+              full_name: name,
+              phone: phone,
+              role: role
+            });
+            
+            if (error) throw error;
+            showToast('Account created successfully!', 'success');
+          } else {
+            const { user, error } = await auth.signIn(email, password);
+            if (error) throw error;
+            showToast('Signed in successfully!', 'success');
+          }
+          
+          showDashboardView();
+          await initializeRealtimeSubscriptions();
+          await initializeRoleView(appState.currentRole);
+        } catch (error) {
+          console.error('Auth error:', error);
+          showToast(error.message || 'Authentication failed', 'error');
+        }
+      });
+
+      // Guest mode
+      document.getElementById('btnGuestMode').addEventListener('click', () => {
+        // Create a demo user
+        appState.user = {
+          id: 'demo-user-' + Date.now(),
+          email: 'guest@example.com',
+          user_metadata: {
+            full_name: 'Demo User',
+            role: 'restaurant'
+          }
+        };
+        
+        showDashboardView();
+        showToast('Demo mode activated. Using local data only.', 'info');
+        
+        // Load demo data
+        loadDemoData();
+      });
+
+      // Role switching
+      document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', () => {
+          switchRole(item.dataset.role);
+        });
+      });
+
+      // Logout
+      document.getElementById('btnLogout').addEventListener('click', () => {
+        auth.signOut();
+        showToast('Signed out successfully', 'info');
+      });
+
+      // Donation form
+      document.getElementById('donationForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const foodType = document.getElementById('foodType').value;
+        const quantity = parseInt(document.getElementById('quantity').value);
+        const expiry = parseInt(document.getElementById('expiry').value);
+        const notes = document.getElementById('notes').value;
+        
+        try {
+          const donationData = {
+            food_type: foodType,
+            quantity: quantity,
+            expiry_hours: expiry,
+            notes: notes,
+            created_at: new Date().toISOString()
+          };
+          
+          const donation = await db.createDonation(donationData);
+          showToast('Donation submitted successfully!', 'success');
+          
+          // Reset form
+          e.target.reset();
+          
+          // Refresh donations list
+          await loadRestaurantData();
+        } catch (error) {
+          console.error('Failed to create donation:', error);
+          showToast('Failed to submit donation', 'error');
+        }
+      });
+
+      // Quick donation button
+      document.getElementById('btnQuickDonation').addEventListener('click', () => {
+        const foodTypes = [
+          'Vegetarian Meals', 'Sandwiches', 'Fresh Fruits', 
+          'Bakery Items', 'Prepared Meals', 'Salads'
+        ];
+        
+        document.getElementById('foodType').value = foodTypes[Math.floor(Math.random() * foodTypes.length)];
+        document.getElementById('quantity').value = Math.floor(Math.random() * 20) + 5;
+        document.getElementById('notes').value = 'Quick donation - please pickup ASAP';
+        
+        showToast('Quick donation form filled', 'info');
+      });
+
+      // Volunteer location and availability
+      document.getElementById('btnEnableLocation').addEventListener('click', async () => {
+        try {
+          const location = await locationManager.getCurrentLocation();
+          appState.userLocation = location;
+          
+          document.getElementById('locationStatus').innerHTML = `
+            <span class="material-icons text-green-400">location_on</span>
+            <span>Location enabled</span>
+          `;
+          
+          showToast('Location access granted', 'success');
+        } catch (error) {
+          console.error('Location error:', error);
+          showToast('Failed to get location', 'error');
+        }
+      });
+
+      document.getElementById('btnToggleAvailability').addEventListener('click', () => {
+        appState.isOnline = !appState.isOnline;
+        
+        const button = document.getElementById('btnToggleAvailability');
+        const status = document.getElementById('locationStatus');
+        
+        if (appState.isOnline) {
+          button.textContent = 'Go Offline';
+          button.classList.remove('btn-primary');
+          button.classList.add('bg-red-500', 'hover:bg-red-600');
+          
+          // Start location tracking
+          locationManager.startTracking();
+          
+          // Start sending heartbeat
+          startHeartbeat();
+          
+          showToast('You are now online and available for deliveries', 'success');
+        } else {
+          button.textContent = 'Go Online';
+          button.classList.add('btn-primary');
+          button.classList.remove('bg-red-500', 'hover:bg-red-600');
+          
+          // Stop location tracking
+          locationManager.stopTracking();
+          
+          // Stop heartbeat
+          clearInterval(appState.heartbeatInterval);
+          
+          showToast('You are now offline', 'info');
+        }
+        
+        // Refresh available jobs
+        loadVolunteerData();
+      });
+
+      // Close map modal
+      document.getElementById('closeMapModal').addEventListener('click', () => {
+        document.getElementById('mapModal').classList.add('hidden');
+      });
+    }
+
+    function startHeartbeat() {
+      // Clear any existing interval
+      clearInterval(appState.heartbeatInterval);
+      
+      // Set up new interval to update location periodically
+      appState.heartbeatInterval = setInterval(() => {
+        if (appState.user && appState.userLocation && appState.isOnline) {
+          db.updateUserLocation(appState.user.id, appState.userLocation);
+        }
+      }, CONFIG.HEARTBEAT_INTERVAL);
+    }
+
+    function loadDemoData() {
+      // Create some demo donations
+      const demoDonations = [
+        {
+          id: 'demo-1',
+          food_type: 'Vegetarian Meals',
+          quantity: 15,
+          expiry_hours: 4,
+          notes: 'Freshly prepared today',
+          status: 'active',
+          created_at: new Date().toISOString(),
+          user_id: appState.user.id
+        },
+        {
+          id: 'demo-2', 
+          food_type: 'Sandwiches',
+          quantity: 25,
+          expiry_hours: 6,
+          notes: 'Assorted varieties',
+          status: 'matched',
+          created_at: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+          user_id: appState.user.id
+        }
+      ];
+      
+      demoDonations.forEach(donation => {
+        appState.donations.set(donation.id, donation);
+      });
+      
+      // Update UI based on current role
+      initializeRoleView(appState.currentRole);
+    }
+
+    // Make functions available globally for onclick handlers
+    window.acceptDonation = acceptDonation;
+    window.acceptDeliveryJob = acceptDeliveryJob;
+    window.markDelivered = markDelivered;
+    window.showLiveTracking = showLiveTracking;
+    window.showDonationDetails = showDonationDetails;
+    window.showJobRoute = showJobRoute;
+  </script>
+</body>
+</html>
