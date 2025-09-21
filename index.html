@@ -2,16 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <title>PlateLink – One Plate. One Act. One Change</title>
+  <title>PlateLink – Real-time Food Rescue Platform</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://maps.googleapis.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://maps.googleapis.com https://cdn.jsdelivr.net https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://maps.googleapis.com;">
   
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Supabase -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Google Maps API -->
-  <script async defer></script>
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <!-- Material Icons -->
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   
@@ -41,6 +43,7 @@
       border-radius: 16px;
       box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
     }
+    
     
     .btn-primary {
       background: var(--primary);
@@ -182,6 +185,212 @@
     .toast.show {
       transform: translateX(0);
     }
+    
+    /* Leaflet map adjustments */
+    .leaflet-container {
+      background: #1f2937;
+    }
+    
+    .leaflet-popup-content-wrapper {
+      background: rgba(31, 41, 55, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      color: var(--light);
+      border-radius: 12px;
+    }
+    
+    .leaflet-popup-tip {
+      background: rgba(31, 41, 55, 0.95);
+    }
+
+        /* Chatbot Styles */
+        .chatbot-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 40;
+    }
+    
+    .chatbot-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .chatbot-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 25px rgba(16, 185, 129, 0.4);
+    }
+    
+    .chatbot-window {
+      position: absolute;
+      bottom: 80px;
+      right: 0;
+      width: 380px;
+      height: 500px;
+      background: rgba(31, 41, 55, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateY(20px) scale(0.9);
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+    
+    .chatbot-window.open {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+    
+    .chatbot-header {
+      padding: 16px 20px;
+      background: rgba(16, 185, 129, 0.1);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    
+    .chatbot-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .chatbot-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .chatbot-close {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+    }
+    
+    .chatbot-close:hover {
+      color: white;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .chatbot-messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    
+    .message {
+      max-width: 80%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      animation: fadeIn 0.3s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .message.bot {
+      background: rgba(255, 255, 255, 0.1);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+    
+    .message.user {
+      background: var(--primary);
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+    
+    .chatbot-input-container {
+      padding: 16px 20px;
+      border-top: 1px solid rgba(255, 255, 255, 0.1);
+      display: flex;
+      gap: 10px;
+    }
+    
+    .chatbot-input {
+      flex: 1;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 10px 16px;
+      color: white;
+      font-size: 14px;
+    }
+    
+    .chatbot-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+    
+    .chatbot-send {
+      background: var(--primary);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .chatbot-send:hover {
+      background: var(--primary-dark);
+      transform: scale(1.05);
+    }
+    
+    .quick-replies {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    
+    .quick-reply {
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+      border-radius: 16px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .quick-reply:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
   </style>
 </head>
 <body class="min-h-screen bg-darker text-light">
@@ -196,8 +405,8 @@
           <span class="material-icons text-primary">restaurant</span>
         </div>
         <div>
-          <h1 class="text-gray-400">PlateLink</h1>
-          <p class="text-gray-400 text-sm">One Plate. One Act. One Change</p>
+          <h1 class="text-gray-400 text-sm">PlateLink</h1>
+          <p class="text-gray-400 text-sm">Real-time food rescue platform</p>
         </div>
         <div id="connectionStatus" class="ml-4 flex items-center gap-2">
           <div class="w-2 h-2 rounded-full bg-green-400 pulse-dot"></div>
@@ -551,7 +760,7 @@
           <div class="flex items-center justify-center h-full bg-gray-800 text-gray-400">
             <div class="text-center">
               <span class="material-icons text-4xl mb-2">map</span>
-              <div>Live map will appear here</div>
+              <div>Loading map...</div>
             </div>
           </div>
         </div>
@@ -576,13 +785,19 @@
   <script>
     // Configuration
     const CONFIG = {
-      SUPABASE_URL: 'YOUR_SUPABASE_URL',
-      SUPABASE_ANON_KEY: 'YOUR_SUPABASE_ANON_KEY',
-      GOOGLE_MAPS_API_KEY: 'YOUR_GOOGLE_MAPS_API_KEY',
+      SUPABASE_URL: 'https://xdfntacjvusuiergaopj.supabase.co',
+      SUPABASE_ANON_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhkZm50YWNqdnVzdWllcmdhb3BqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg0MzAxMDcsImV4cCI6MjA3NDAwNjEwN30.Ey9LgHymXXmKHEcuIWmIgYZYkNYMJopYqOqFxPIfzG8',
       MAX_RETRIES: 3,
       RETRY_DELAY: 1000,
       LOCATION_UPDATE_INTERVAL: 30000, // 30 seconds
       HEARTBEAT_INTERVAL: 60000, // 1 minute
+      DEMO_LOCATIONS: [
+        { lat: 40.7128, lng: -74.0060, name: "New York" },
+        { lat: 34.0522, lng: -118.2437, name: "Los Angeles" },
+        { lat: 41.8781, lng: -87.6298, name: "Chicago" },
+        { lat: 29.7604, lng: -95.3698, name: "Houston" },
+        { lat: 33.4484, lng: -112.0740, name: "Phoenix" }
+      ]
     };
 
     // Initialize Supabase client with retry logic
@@ -591,7 +806,7 @@
 
     function initializeSupabase() {
       try {
-        if (CONFIG.SUPABASE_URL.includes('YOUR_SUPABASE')) {
+        if (CONFIG.SUPABASE_URL.includes('your-project')) {
           console.warn('Using demo mode - Supabase not configured');
           return null;
         }
@@ -605,6 +820,7 @@
         });
         
         console.log('Supabase initialized successfully');
+        updateConnectionStatus(true);
         return supabase;
       } catch (error) {
         console.error('Failed to initialize Supabase:', error);
@@ -613,6 +829,8 @@
         if (retryCount < CONFIG.MAX_RETRIES) {
           retryCount++;
           setTimeout(initializeSupabase, CONFIG.RETRY_DELAY * retryCount);
+        } else {
+          updateConnectionStatus(false);
         }
         return null;
       }
@@ -629,7 +847,10 @@
       notifications: [],
       subscriptions: new Map(),
       heartbeatInterval: null,
-      locationInterval: null
+      locationInterval: null,
+      map: null,
+      mapMarkers: new Map()
+     
     };
 
     // Real-time subscriptions
@@ -838,6 +1059,23 @@
           if (error) throw error;
         });
       }
+
+      async getUserLocation(userId) {
+        if (!supabase) return null;
+
+        return this.withRetry(async () => {
+          const { data, error } = await supabase
+            .from('user_locations')
+            .select('*')
+            .eq('user_id', userId)
+            .order('updated_at', { ascending: false })
+            .limit(1)
+            .single();
+
+          if (error) return null;
+          return data;
+        });
+      }
     }
 
     const db = new DatabaseManager();
@@ -940,7 +1178,12 @@
       async getCurrentLocation() {
         return new Promise((resolve, reject) => {
           if (!navigator.geolocation) {
-            reject(new Error('Geolocation is not supported by this browser.'));
+            // Use a demo location if geolocation is not available
+            const demoLocation = CONFIG.DEMO_LOCATIONS[
+              Math.floor(Math.random() * CONFIG.DEMO_LOCATIONS.length)
+            ];
+            this.lastLocation = demoLocation;
+            resolve(demoLocation);
             return;
           }
 
@@ -956,7 +1199,12 @@
             },
             error => {
               console.error('Geolocation error:', error);
-              reject(error);
+              // Use a demo location as fallback
+              const demoLocation = CONFIG.DEMO_LOCATIONS[
+                Math.floor(Math.random() * CONFIG.DEMO_LOCATIONS.length)
+              ];
+              this.lastLocation = demoLocation;
+              resolve(demoLocation);
             },
             {
               enableHighAccuracy: true,
@@ -969,7 +1217,7 @@
 
       startTracking() {
         if (!navigator.geolocation) {
-          showToast('Geolocation is not supported', 'error');
+          showToast('Geolocation is not supported. Using demo location.', 'warning');
           return false;
         }
 
@@ -991,7 +1239,7 @@
           },
           error => {
             console.error('Geolocation tracking error:', error);
-            showToast('Location tracking error', 'warning');
+            showToast('Location tracking error. Using demo location.', 'warning');
           },
           {
             enableHighAccuracy: true,
@@ -1012,6 +1260,97 @@
     }
 
     const locationManager = new LocationManager();
+
+    // Map manager
+    class MapManager {
+      constructor() {
+        this.map = null;
+        this.markers = new Map();
+        this.routingControl = null;
+      }
+
+      initMap(containerId, center = [40.7128, -74.0060], zoom = 13) {
+        // Initialize the map
+        this.map = L.map(containerId).setView(center, zoom);
+        
+        // Add tile layer (using OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(this.map);
+        
+        return this.map;
+      }
+
+      addMarker(id, latlng, options = {}) {
+        const defaultOptions = {
+          title: 'Location',
+          color: '#3388ff'
+        };
+        
+        const markerOptions = { ...defaultOptions, ...options };
+        
+        // Create a custom icon with the specified color
+        const icon = L.divIcon({
+          html: `<div style="background-color: ${markerOptions.color}; width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 0 10px rgba(0,0,0,0.5);"></div>`,
+          className: 'custom-marker',
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+        
+        const marker = L.marker(latlng, { icon: icon })
+          .addTo(this.map)
+          .bindPopup(markerOptions.title);
+        
+        this.markers.set(id, marker);
+        return marker;
+      }
+
+      removeMarker(id) {
+        const marker = this.markers.get(id);
+        if (marker) {
+          this.map.removeLayer(marker);
+          this.markers.delete(id);
+        }
+      }
+
+      clearMarkers() {
+        this.markers.forEach((marker, id) => {
+          this.map.removeLayer(marker);
+        });
+        this.markers.clear();
+      }
+
+      addRoute(waypoints, options = {}) {
+        // Remove existing route if any
+        if (this.routingControl) {
+          this.map.removeControl(this.routingControl);
+        }
+        
+        // Use Leaflet Routing Machine (would need additional library)
+        // For demo purposes, we'll just draw a simple polyline
+        const route = L.polyline(waypoints, {
+          color: options.color || '#10B981',
+          weight: 4,
+          opacity: 0.7,
+          dashArray: '10, 10'
+        }).addTo(this.map);
+        
+        // Fit map to show the entire route
+        this.map.fitBounds(route.getBounds());
+        
+        return route;
+      }
+
+      panTo(latlng) {
+        this.map.panTo(latlng);
+      }
+
+      setView(latlng, zoom) {
+        this.map.setView(latlng, zoom);
+      }
+    }
+
+    const mapManager = new MapManager();
 
     // UI Helper functions
     function showToast(message, type = 'info', duration = 4000) {
@@ -1130,13 +1469,33 @@
       }
     }
 
+    // When querying donations by location (for nearby donations)
+async function getNearbyDonations(lat, lng, radiusKm = 10) {
+  if (!supabase) return [];
+  
+  const { data, error } = await supabase
+    .rpc('nearby_donations', {
+      lat: lat,
+      lng: lng,
+      radius: radiusKm
+    });
+  
+  if (error) {
+    console.error('Error fetching nearby donations:', error);
+    return [];
+  }
+  
+  return data;
+}
+
+
     // Restaurant functionality
     async function loadRestaurantData() {
       try {
         if (appState.user) {
           const donations = await db.getDonations({ user_id: appState.user.id });
           updateRestaurantStats(donations);
-          displayActiveDonations(donations.filter(d => d.status !== 'completed'));
+          displayActiveDonations(donations.filter(d => d.status !== 'completed' && d.status !== 'expired'));
         }
       } catch (error) {
         console.error('Failed to load restaurant data:', error);
@@ -1147,7 +1506,7 @@
     function updateRestaurantStats(donations) {
       const totalMeals = donations.reduce((sum, d) => sum + (d.quantity || 0), 0);
       const co2Saved = (totalMeals * 0.5).toFixed(1); // 0.5kg CO2 per meal estimate
-      const activeDonations = donations.filter(d => d.status !== 'completed').length;
+      const activeDonations = donations.filter(d => d.status === 'active' || d.status === 'matched' || d.status === 'in-progress').length;
 
       document.getElementById('restaurantMeals').textContent = totalMeals;
       document.getElementById('restaurantCO2').textContent = co2Saved;
@@ -1165,6 +1524,8 @@
         `;
         return;
       }
+
+      
 
       container.innerHTML = donations.map(donation => `
         <div class="card p-4">
@@ -1313,7 +1674,7 @@
             status: 'in-progress' 
           });
           displayActiveDeliveries(activeDeliveries);
-          updateVolunteerStats();
+          updateVolunteerStats(activeDeliveries);
         }
       } catch (error) {
         console.error('Failed to load volunteer data:', error);
@@ -1402,11 +1763,14 @@
       `).join('');
     }
 
-    function updateVolunteerStats() {
-      // In a real implementation, these would come from the database
-      document.getElementById('volunteerDeliveries').textContent = '0';
-      document.getElementById('volunteerMeals').textContent = '0';
-      document.getElementById('volunteerActive').textContent = '0';
+    function updateVolunteerStats(deliveries) {
+      const totalDeliveries = deliveries.length;
+      const totalMeals = deliveries.reduce((sum, d) => sum + (d.quantity || 0), 0);
+      const activeDeliveries = deliveries.filter(d => d.status === 'in-progress').length;
+
+      document.getElementById('volunteerDeliveries').textContent = totalDeliveries;
+      document.getElementById('volunteerMeals').textContent = totalMeals;
+      document.getElementById('volunteerActive').textContent = activeDeliveries;
     }
 
     // Real-time subscription setup
@@ -1561,10 +1925,88 @@
       }
     }
 
-    function showLiveTracking(donationId) {
+    async function showLiveTracking(donationId) {
       // Show the live tracking modal
       document.getElementById('mapModal').classList.remove('hidden');
-      // In a real implementation, this would initialize the Google Maps integration
+      
+      // Initialize map if not already done
+      if (!appState.map) {
+        // Get user's current location or use a default
+        let center = [40.7128, -74.0060]; // Default to New York
+        if (appState.userLocation) {
+          center = [appState.userLocation.lat, appState.userLocation.lng];
+        }
+        
+        appState.map = mapManager.initMap('liveMap', center, 13);
+      }
+      
+      // Clear existing markers
+      mapManager.clearMarkers();
+      
+      // Get donation details
+      const donation = appState.donations.get(donationId);
+      if (!donation) {
+        showToast('Donation details not found', 'error');
+        return;
+      }
+      
+      // Add pickup location marker (restaurant location)
+      // In a real app, this would come from the restaurant's location data
+      const pickupLocation = CONFIG.DEMO_LOCATIONS[Math.floor(Math.random() * CONFIG.DEMO_LOCATIONS.length)];
+      mapManager.addMarker('pickup', [pickupLocation.lat, pickupLocation.lng], {
+        title: `Pickup: ${donation.food_type}`,
+        color: '#10B981'
+      });
+      
+      // Add delivery location marker (NGO location)
+      // In a real app, this would come from the NGO's location data
+      const deliveryLocation = CONFIG.DEMO_LOCATIONS[Math.floor(Math.random() * CONFIG.DEMO_LOCATIONS.length)];
+      mapManager.addMarker('delivery', [deliveryLocation.lat, deliveryLocation.lng], {
+        title: 'Delivery Location',
+        color: '#3B82F6'
+      });
+      
+      // Add volunteer location if available
+      if (appState.userLocation) {
+        mapManager.addMarker('volunteer', [appState.userLocation.lat, appState.userLocation.lng], {
+          title: 'Your Location',
+          color: '#EF4444'
+        });
+      }
+      
+      // Add route between pickup and delivery
+      mapManager.addRoute([
+        [pickupLocation.lat, pickupLocation.lng],
+        [deliveryLocation.lat, deliveryLocation.lng]
+      ]);
+      
+      // Update ETA and distance info
+      const distance = calculateDistance(
+        pickupLocation.lat, pickupLocation.lng,
+        deliveryLocation.lat, deliveryLocation.lng
+      );
+      
+      document.getElementById('mapETA').textContent = `${Math.round(distance * 4)} min`;
+      document.getElementById('mapDistance').textContent = `${distance.toFixed(1)} km`;
+      document.getElementById('mapStatus').textContent = 'In Transit';
+    }
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+      // Haversine formula to calculate distance between two points
+      const R = 6371; // Earth's radius in km
+      const dLat = deg2rad(lat2 - lat1);
+      const dLon = deg2rad(lon2 - lon1);
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      const distance = R * c;
+      return distance;
+    }
+
+    function deg2rad(deg) {
+      return deg * (Math.PI/180);
     }
 
     function showDonationDetails(donationId) {
@@ -1589,7 +2031,6 @@
       if (user) {
         appState.user = user;
         showDashboardView();
-        await initializeRealtimeSubscriptions
         await initializeRealtimeSubscriptions();
         await initializeRoleView(appState.currentRole);
       } else {
@@ -1706,13 +2147,17 @@
         const notes = document.getElementById('notes').value;
         
         try {
+          // Get user's current location
+          const location = await locationManager.getCurrentLocation();
+          
           const donationData = {
-            food_type: foodType,
-            quantity: quantity,
-            expiry_hours: expiry,
-            notes: notes,
-            created_at: new Date().toISOString()
-          };
+  food_type: foodType,
+  quantity: quantity,
+  expiry_hours: expiry,
+  notes: notes,
+  created_at: new Date().toISOString(),
+  location: `POINT(${location.lng} ${location.lat})` // Note: longitude first for PostGIS
+};
           
           const donation = await db.createDonation(donationData);
           showToast('Donation submitted successfully!', 'success');
@@ -1814,6 +2259,8 @@
       }, CONFIG.HEARTBEAT_INTERVAL);
     }
 
+    
+
     function loadDemoData() {
       // Create some demo donations
       const demoDonations = [
@@ -1847,6 +2294,8 @@
       initializeRoleView(appState.currentRole);
     }
 
+    
+
     // Make functions available globally for onclick handlers
     window.acceptDonation = acceptDonation;
     window.acceptDeliveryJob = acceptDeliveryJob;
@@ -1854,6 +2303,185 @@
     window.showLiveTracking = showLiveTracking;
     window.showDonationDetails = showDonationDetails;
     window.showJobRoute = showJobRoute;
+
+        // Chatbot functionality
+        class Chatbot {
+      constructor() {
+        this.messages = [];
+        this.initializeEventListeners();
+      }
+      
+      initializeEventListeners() {
+        // Toggle chatbot window
+        document.getElementById('chatbotToggle').addEventListener('click', () => {
+          this.toggleChatbot();
+        });
+        
+        // Close chatbot
+        document.getElementById('chatbotClose').addEventListener('click', () => {
+          this.closeChatbot();
+        });
+        
+        // Send message on button click
+        document.getElementById('chatbotSend').addEventListener('click', () => {
+          this.sendMessage();
+        });
+        
+        // Send message on Enter key
+        document.getElementById('chatbotInput').addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') {
+            this.sendMessage();
+          }
+        });
+        
+        // Quick reply buttons
+        document.addEventListener('click', (e) => {
+          if (e.target.classList.contains('quick-reply')) {
+            const message = e.target.getAttribute('data-message');
+            document.getElementById('chatbotInput').value = message;
+            this.sendMessage();
+          }
+        });
+      }
+      
+      toggleChatbot() {
+        const chatbotWindow = document.getElementById('chatbotWindow');
+        appState.chatbotOpen = !appState.chatbotOpen;
+        
+        if (appState.chatbotOpen) {
+          chatbotWindow.classList.add('open');
+          document.getElementById('chatbotInput').focus();
+        } else {
+          chatbotWindow.classList.remove('open');
+        }
+      }
+      
+      closeChatbot() {
+        document.getElementById('chatbotWindow').classList.remove('open');
+        appState.chatbotOpen = false;
+      }
+      
+      sendMessage() {
+        const input = document.getElementById('chatbotInput');
+        const message = input.value.trim();
+        
+        if (message) {
+          this.addMessage(message, 'user');
+          input.value = '';
+          
+          // Simulate AI response with a slight delay
+          setTimeout(() => {
+            this.generateResponse(message);
+          }, 1000);
+        }
+      }
+      
+      addMessage(text, sender) {
+        const messagesContainer = document.getElementById('chatbotMessages');
+        const messageElement = document.createElement('div');
+        messageElement.classList.add('message', sender);
+        messageElement.textContent = text;
+        
+        messagesContainer.appendChild(messageElement);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        
+        // Store message
+        this.messages.push({ text, sender, timestamp: new Date() });
+      }
+      
+      generateResponse(userMessage) {
+        let response = '';
+        const lowerMessage = userMessage.toLowerCase();
+        
+        // Simple response logic - in a real app, this would connect to an AI service
+        if (lowerMessage.includes('donate') || lowerMessage.includes('how to donate')) {
+          response = "To donate food, go to the Restaurant dashboard and use the 'Report Food Surplus' form. Specify the food type, quantity, and expiry time. Once submitted, nearby NGOs will be notified and can accept your donation.";
+        } 
+        else if (lowerMessage.includes('type') || lowerMessage.includes('what can i donate')) {
+          response = "You can donate prepared meals, fresh produce, baked goods, packaged foods, and non-perishable items. Please avoid donating foods that have passed their expiration date or show signs of spoilage.";
+        }
+        else if (lowerMessage.includes('delivery') || lowerMessage.includes('process')) {
+          response = "Once an NGO accepts your donation, a volunteer will be matched to pick up the food and deliver it. You can track the delivery in real-time through the map interface. The entire process typically takes 1-3 hours depending on distance.";
+        }
+        else if (lowerMessage.includes('benefit') || lowerMessage.includes('why')) {
+          response = "Donating surplus food reduces waste, helps fight hunger, and lowers greenhouse gas emissions. Restaurants can also receive tax benefits for donations. It's a sustainable way to support your community!";
+        }
+        else if (lowerMessage.includes('hello') || lowerMessage.includes('hi') || lowerMessage.includes('hey')) {
+          response = "Hello! I'm here to help you with PlateLink. You can ask me about donating food, the delivery process, or anything else about our platform.";
+        }
+        else {
+          response = "I'm not sure I understand. You can ask me about donating food, how the delivery process works, or what types of food can be donated. How else can I help you?";
+        }
+        
+        this.addMessage(response, 'bot');
+        
+        // Add quick replies for follow-up questions
+        if (!lowerMessage.includes('hello') && !lowerMessage.includes('hi') && !lowerMessage.includes('hey')) {
+          this.addQuickReplies();
+        }
+      }
+      
+      addQuickReplies() {
+        const messagesContainer = document.getElementById('chatbotMessages');
+        const quickReplies = document.createElement('div');
+        quickReplies.className = 'quick-replies';
+        quickReplies.innerHTML = `
+          <div class="quick-reply" data-message="How do I track my donation?">Track donation</div>
+          <div class="quick-reply" data-message="What are the tax benefits?">Tax benefits</div>
+          <div class="quick-reply" data-message="How do I become a volunteer?">Become a volunteer</div>
+        `;
+        
+        // Add to the last bot message
+        const lastMessage = messagesContainer.lastChild;
+        lastMessage.appendChild(quickReplies);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      }
+    }
+
+    // Initialize chatbot when the app loads
+    let chatbot;
+    document.addEventListener('DOMContentLoaded', () => {
+      chatbot = new Chatbot();
+    });
   </script>
+
+      <!-- AI Chatbot -->
+      <div class="chatbot-container">
+        <div class="chatbot-button" id="chatbotToggle">
+          <span class="material-icons">support_agent</span>
+        </div>
+        <div class="chatbot-window" id="chatbotWindow">
+          <div class="chatbot-header">
+            <div class="chatbot-title">
+              <div class="chatbot-avatar">
+                <span class="material-icons">support_agent</span>
+              </div>
+              <div>
+                <div class="font-semibold">PlateLink Assistant</div>
+                <div class="text-xs text-gray-400">AI-powered support</div>
+              </div>
+            </div>
+            <button class="chatbot-close" id="chatbotClose">
+              <span class="material-icons">close</span>
+            </button>
+          </div>
+          <div class="chatbot-messages" id="chatbotMessages">
+            <div class="message bot">
+              <div>Hi there! I'm your PlateLink assistant. How can I help you today?</div>
+              <div class="quick-replies">
+                <div class="quick-reply" data-message="How do I donate food?">How do I donate food?</div>
+                <div class="quick-reply" data-message="What types of food can I donate?">What can I donate?</div>
+                <div class="quick-reply" data-message="How does the delivery process work?">Delivery process</div>
+              </div>
+            </div>
+          </div>
+          <div class="chatbot-input-container">
+            <input type="text" class="chatbot-input" id="chatbotInput" placeholder="Type your message...">
+            <button class="chatbot-send" id="chatbotSend">
+              <span class="material-icons">send</span>
+            </button>
+          </div>
+        </div>
+      </div>
 </body>
 </html>
